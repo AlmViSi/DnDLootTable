@@ -153,23 +153,34 @@ function updateItemPosition(itemElement, itemData) {
 // Загрузка данных
 async function loadData() {
     try {
-        // Очищаем контейнеры
+        // Очищаем контейнеры перед загрузкой
         charactersContainer.innerHTML = '';
         unassignedItemsContainer.innerHTML = '';
 
-        // Загрузка персонажей
-        const charactersSnapshot = await db.collection("characters").get();
+        // Загрузка персонажей с проверкой на дубли
+        const loadedCharacters = new Set();
+        const charactersSnapshot = await db.collection("characters").orderBy("createdAt").get();
+        
         charactersSnapshot.forEach(doc => {
-            const char = doc.data();
-            addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
+            if (!loadedCharacters.has(doc.id)) {
+                const char = doc.data();
+                addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
+                loadedCharacters.add(doc.id);
+            }
         });
 
-        // Загрузка предметов
-        const itemsSnapshot = await db.collection("items").get();
+        // Загрузка предметов с проверкой на дубли
+        const loadedItems = new Set();
+        const itemsSnapshot = await db.collection("items").orderBy("createdAt").get();
+        
         itemsSnapshot.forEach(doc => {
-            const item = doc.data();
-            addItemToContainer(item, doc.id);
-        });
+            if (!loadedItems.has(doc.id)) {
+                const item = doc.data();
+                addItemToContainer(item, doc.id);
+                loadedItems.add(doc.id);
+            }
+		updateTotals();	
+        }); 
     } catch (error) {
         console.error("Ошибка загрузки данных:", error);
     }
