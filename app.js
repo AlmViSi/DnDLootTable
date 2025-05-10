@@ -60,14 +60,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Настройка обработчиков событий
 function setupEventListeners() {
-    addCharacterBtn.addEventListener('click', () => characterModal.style.display = 'block');
-    addItemBtn.addEventListener('click', () => itemsModal.style.display = 'block');
+    // Очищаем все старые обработчики перед добавлением новых
+    addCharacterBtn.onclick = null;
+    addItemBtn.onclick = null;
+    saveCharacterBtn.onclick = null;
+    saveItemsBtn.onclick = null;
+    refreshDataBtn.onclick = null;
+    scrollToTopBtn.onclick = null;
+
+    // Добавляем новые обработчики
+    addCharacterBtn.addEventListener('click', () => {
+        characterModal.style.display = 'block';
+        document.getElementById('characterName').focus();
+    });
+    
+    addItemBtn.addEventListener('click', () => {
+        itemsModal.style.display = 'block';
+        itemsTextarea.focus();
+    });
+    
+    saveCharacterBtn.addEventListener('click', saveCharacter);
+    saveItemsBtn.addEventListener('click', saveItems);
     refreshDataBtn.addEventListener('click', refreshData);
     scrollToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-    saveCharacterBtn.addEventListener('click', saveCharacter);
-    saveItemsBtn.addEventListener('click', saveItems);
-
+    // Обработчики закрытия модальных окон
     closeButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.modal').style.display = 'none';
@@ -84,11 +101,20 @@ function setupEventListeners() {
 // Загрузка данных из Firestore
 async function loadData() {
     try {
-        // Загрузка персонажей
+        // Очищаем контейнеры перед загрузкой
+        charactersContainer.innerHTML = '';
+        unassignedItemsContainer.innerHTML = '';
+
+        // Загрузка персонажей с проверкой на дубли
+        const loadedCharacterIds = new Set();
         const charactersSnapshot = await db.collection("characters").get();
+        
         charactersSnapshot.forEach(doc => {
-            const char = doc.data();
-            addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
+            if (!loadedCharacterIds.has(doc.id)) {
+                const char = doc.data();
+                addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
+                loadedCharacterIds.add(doc.id);
+            }
         });
 
         // Загрузка предметов
@@ -133,17 +159,25 @@ function setupRealTimeUpdates() {
 
 // Добавление персонажа в DOM и Firestore
 async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
+    // Проверяем, не существует ли уже персонаж с таким ID
+    if (id && document.getElementById(`character-${id}`)) {
+        console.warn(`Персонаж с ID ${id} уже существует`);
+        return;
+    }
+
     if (!id) {
-        // Если ID нет - создаем новый документ в Firestore
+        // Создаем нового персонажа в Firestore
         const docRef = await db.collection("characters").add({
             name: name,
             nickname: nickname,
-            imageUrl: imageUrl
+            imageUrl: imageUrl,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         id = docRef.id;
     }
     
-    const characterId = 'character-' + id;
+    // Создаем DOM-элемент персонажа
+    const characterId = `character-${id}`;
     const character = document.createElement('div');
     character.className = 'character';
     character.id = characterId;
@@ -430,47 +464,51 @@ function setupDraggableItem(item) {
     });
 }
 
+async function handleItemDrop(targetElement, itemId) {
+    const itemElement = document.getElementById(itemId);
+    if (!itemElement) return;
+
+    const itemFirebaseId = itemId.replace('item-', '');
+    const itemData = {
+        name: itemElement.querySelector('.item-name').textContent,
+        value: parseFloat(itemElement.dataset.value),
+        slot: itemElement.dataset.slot,
+        description: itemElement.dataset.description || "",
+        isGold: itemElement.dataset.isGold === 'true'
+    };
+
+    // Определяем characterId (null для "Не распределено")
+    let characterId = null;
+    if (targetElement.closest('.character')) {
+        characterId = targetElement.closest('.character').id.replace('character-', '');
+    }
+
+    try {
+        await db.collection("items").doc(itemFirebaseId).update({
+            characterId: characterId,
+            slot: itemData.slot
+        });
+        // Локальное обновление произойдет через onSnapshot
+    } catch (error) {
+        console.error("Ошибка при перемещении предмета:", error);
+    }
+}
+
 function setupDropTarget(slot) {
     slot.addEventListener('dragover', function(e) {
         e.preventDefault();
         this.classList.add('slot-highlight');
     });
-    
+
     slot.addEventListener('dragleave', function() {
         this.classList.remove('slot-highlight');
     });
-    
+
     slot.addEventListener('drop', async function(e) {
         e.preventDefault();
         this.classList.remove('slot-highlight');
         const itemId = e.dataTransfer.getData('text/plain');
-        const itemElement = document.getElementById(itemId);
-        
-        if (itemElement) {
-            const targetSlot = this.dataset.slot;
-            const itemSlot = itemElement.dataset.slot;
-            
-            // Проверяем соответствие слота (или разрешаем для Other)
-            if (targetSlot === itemSlot || targetSlot === 'Other') {
-                const itemData = {
-                    name: itemElement.querySelector('.item-name').textContent,
-                    value: parseFloat(itemElement.dataset.value),
-                    slot: itemSlot,
-                    description: itemElement.dataset.description || "",
-                    isGold: itemElement.dataset.isGold === 'true'
-                };
-                
-                // Получаем ID предмета из элемента
-                const itemFirebaseId = itemId.replace('item-', '');
-                
-                // Обновляем в Firestore
-                await db.collection("items").doc(itemFirebaseId).update({
-                    characterId: this.closest('.character')?.id.replace('character-', '') || null
-                });
-                
-                // Локальное обновление произойдет через onSnapshot
-            }
-        }
+        await handleItemDrop(this, itemId);
     });
 }
 
@@ -478,42 +516,32 @@ function setupCharacterDropTarget(character) {
     character.addEventListener('dragover', function(e) {
         e.preventDefault();
     });
-    
+
     character.addEventListener('drop', async function(e) {
         e.preventDefault();
         const itemId = e.dataTransfer.getData('text/plain');
-        const itemElement = document.getElementById(itemId);
+        const slotType = document.getElementById(itemId).dataset.slot;
+        const slot = character.querySelector(`.slot[data-slot="${slotType}"]`) || 
+                     character.querySelector('.slot[data-slot="Other"]');
         
-        if (itemElement) {
-            const slotType = itemElement.dataset.slot;
-            const slot = character.querySelector(`.slot[data-slot="${slotType}"]`) || 
-                         character.querySelector('.slot[data-slot="Other"]');
-            
-            if (slot) {
-                const itemData = {
-                    name: itemElement.querySelector('.item-name').textContent,
-                    value: parseFloat(itemElement.dataset.value),
-                    slot: slotType,
-                    description: itemElement.dataset.description || "",
-                    isGold: itemElement.dataset.isGold === 'true'
-                };
-                
-                const itemFirebaseId = itemId.replace('item-', '');
-                
-                // Обновляем в Firestore
-                await db.collection("items").doc(itemFirebaseId).update({
-                    characterId: character.id.replace('character-', '')
-                });
-                
-                // Локальное обновление произойдет через onSnapshot
-            }
+        if (slot) {
+            await handleItemDrop(slot, itemId);
         }
     });
 }
 
 // Обновление данных
-function refreshData() {
-    charactersContainer.innerHTML = '';
-    unassignedItemsContainer.innerHTML = '';
-    loadData();
+async function refreshData() {
+    // Добавляем индикатор загрузки
+    refreshDataBtn.disabled = true;
+    refreshDataBtn.textContent = 'Загрузка...';
+    
+    try {
+        await loadData();
+    } catch (error) {
+        console.error("Ошибка при обновлении данных:", error);
+    } finally {
+        refreshDataBtn.disabled = false;
+        refreshDataBtn.textContent = '↻';
+    }
 }
