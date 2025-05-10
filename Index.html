@@ -18,7 +18,7 @@
     --danger: #c33;
     --slot-bg: rgba(45, 45, 45, 0.8);
     --character-width: 490px;
-    --character-font-size: 1.5rem; /* Базовый размер шрифта */
+    --character-font-size: 1.5rem;
 }
 
 /* Стили для полос прокрутки */
@@ -42,7 +42,7 @@
 
 body {
     font-family: 'Balthazar', serif;
-    font-size: 16px; /* Базовый размер для rem */
+    font-size: 16px;
     background: var(--bg-dark);
     color: var(--text-main);
     margin: 0;
@@ -74,7 +74,6 @@ h1 {
     border-radius: 5px;
 }
 
-/* Основные стили для персонажа */
 .character-title {
     font-size: calc(var(--character-font-size) * 1.5);
     text-align: center;
@@ -107,7 +106,6 @@ h1 {
     text-align: center;
 }
 
-/* Стили для предметов */
 .character .item-name {
     font-size: calc(var(--character-font-size) * 1.1);
     text-shadow: 
@@ -131,7 +129,6 @@ h1 {
     color: var(--text-main);
 }
 
-/* Остальные стили (без изменений) */
 .main-container {
     display: flex;
     flex-direction: column;
@@ -192,6 +189,28 @@ h1 {
 .unassigned-items {
     flex-grow: 1;
     overflow-y: auto;
+}
+
+.buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.add-button {
+    background: var(--text-accent);
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Balthazar', serif;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.add-button:hover {
+    background: #c99c33;
 }
 
 .characters-container {
@@ -528,6 +547,52 @@ h1 {
     margin-top: 15px;
 }
 
+.modal-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: var(--item-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+}
+
+.modal-textarea {
+    width: 100%;
+    height: 200px;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: var(--item-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    resize: vertical;
+}
+
+.modal-button {
+    background: var(--text-accent);
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Balthazar', serif;
+}
+
+.modal-button:hover {
+    background: #c99c33;
+}
+
+.close {
+    color: var(--text-accent);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #c99c33;
+}
+
 .refresh-btn {
     position: absolute;
     right: 20px;
@@ -605,6 +670,11 @@ h1 {
                     </div>
                     <div class="unassigned-items" id="unassignedItems"></div>
                     <div class="character-total">Всего: <span id="unassignedTotal">0 зол.</span></div>
+                    
+                    <div class="buttons-row">
+                        <button class="add-button" id="addCharacterBtn">+ Персонаж</button>
+                        <button class="add-button" id="addItemBtn">+ Предмет</button>
+                    </div>
                 </div>
                 
                 <div class="characters-container" id="charactersContainer">
@@ -629,11 +699,39 @@ h1 {
     <div class="modal" id="editModal">
         <div class="modal-content">
             <div class="modal-title">Редактировать предмет</div>
-            <input type="text" id="editItemName" placeholder="Название предмета" class="full-width">
-            <textarea id="editItemDescription" placeholder="Описание предмета" class="full-width" style="margin-top: 10px;"></textarea>
+            <input type="text" id="editItemName" placeholder="Название предмета" class="modal-input">
+            <textarea id="editItemDescription" placeholder="Описание предмета" class="modal-textarea"></textarea>
             <div class="modal-buttons">
-                <button id="cancelEdit">Отмена</button>
-                <button id="saveEdit">Сохранить</button>
+                <button class="modal-button" id="cancelEdit">Отмена</button>
+                <button class="modal-button" id="saveEdit">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления персонажа -->
+    <div class="modal" id="characterModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-title">Добавить персонажа</div>
+            <input type="text" id="characterName" placeholder="Имя персонажа" class="modal-input" required>
+            <input type="text" id="characterNickname" placeholder="Прозвище (опционально)" class="modal-input">
+            <input type="text" id="characterImage" placeholder="URL изображения (опционально)" class="modal-input">
+            <div class="modal-buttons">
+                <button class="modal-button" id="saveCharacter">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления предметов -->
+    <div class="modal" id="itemsModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-title">Добавить предметы</div>
+            <p>Формат: Название | Цена (gp) | Слот | Описание (опционально)</p>
+            <p>Пример: <em>Меч света | 1500 | Weapon | Светится в темноте</em></p>
+            <textarea id="itemsTextarea" class="modal-textarea" placeholder="Введите предметы, каждый с новой строки"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-button" id="saveItems">Добавить предметы</button>
             </div>
         </div>
     </div>
@@ -652,11 +750,14 @@ h1 {
             const cancelEditBtn = document.getElementById('cancelEdit');
             const saveEditBtn = document.getElementById('saveEdit');
             const refreshDataBtn = document.getElementById('refreshData');
-            
-            // Google Sheets API configuration
-            const spreadsheetId = '1iS4at4_p5vzr7SKGJOsRh4SO3m9aaq6XefromUNLWGI';
-            const sheetName = 'Loot';
-            const apiKey = 'AIzaSyDOgvVTXrLa9N4cElW6aPBNCgftk2nXnTo';
+            const addCharacterBtn = document.getElementById('addCharacterBtn');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const characterModal = document.getElementById('characterModal');
+            const itemsModal = document.getElementById('itemsModal');
+            const saveCharacterBtn = document.getElementById('saveCharacter');
+            const saveItemsBtn = document.getElementById('saveItems');
+            const itemsTextarea = document.getElementById('itemsTextarea');
+            const closeButtons = document.querySelectorAll('.close');
             
             // Текущий редактируемый предмет
             let currentEditingItem = null;
@@ -702,10 +803,47 @@ h1 {
             ];
             
             // Initialize with empty state
-            loadFromGoogleSheets();
+            initializeApp();
             
-            // Refresh data from Google Sheets
-            refreshDataBtn.addEventListener('click', loadFromGoogleSheets);
+            // Initialize app with sample data
+            function initializeApp() {
+                // Add sample character
+                addCharacter('Пример Персонажа', 'Прозвище', '');
+                
+                // Add sample items
+                const sampleItems = [
+                    'Меч света | 1500 | Weapon | Светится в темноте',
+                    'Кольцо защиты | 2000 | Ring | +1 к защите',
+                    'Нагрудник дракона | 3500 | Armor | Из чешуи красного дракона'
+                ];
+                
+                sampleItems.forEach(item => {
+                    const parts = item.split('|').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        addItemToContainer(
+                            parts[0],
+                            1,
+                            parseFloat(parts[1]) || 0,
+                            parts[2],
+                            unassignedItemsContainer,
+                            false,
+                            parts[3] || ''
+                        );
+                    }
+                });
+                
+                updateTotals();
+            }
+            
+            // Refresh data button
+            refreshDataBtn.addEventListener('click', function() {
+                // Clear existing data
+                charactersContainer.innerHTML = '';
+                unassignedItemsContainer.innerHTML = '';
+                
+                // Reinitialize with sample data
+                initializeApp();
+            });
             
             // Edit item modal
             function showEditModal(item) {
@@ -750,91 +888,85 @@ h1 {
                 }
             });
             
+            // Character modal
+            addCharacterBtn.addEventListener('click', function() {
+                characterModal.style.display = 'flex';
+                document.getElementById('characterName').focus();
+            });
+            
+            // Items modal
+            addItemBtn.addEventListener('click', function() {
+                itemsModal.style.display = 'flex';
+                itemsTextarea.focus();
+            });
+            
+            // Close buttons
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+            
+            // Save character
+            saveCharacterBtn.addEventListener('click', function() {
+                const name = document.getElementById('characterName').value;
+                const nickname = document.getElementById('characterNickname').value;
+                const imageUrl = document.getElementById('characterImage').value;
+                
+                if (name) {
+                    addCharacter(name, nickname, imageUrl);
+                    characterModal.style.display = 'none';
+                    
+                    // Clear fields
+                    document.getElementById('characterName').value = '';
+                    document.getElementById('characterNickname').value = '';
+                    document.getElementById('characterImage').value = '';
+                } else {
+                    alert('Пожалуйста, введите имя персонажа');
+                }
+            });
+            
+            // Save items
+            saveItemsBtn.addEventListener('click', function() {
+                const itemsText = itemsTextarea.value;
+                const lines = itemsText.split('\n').filter(line => line.trim());
+                
+                lines.forEach(line => {
+                    const parts = line.split('|').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        const name = parts[0];
+                        const value = parseFloat(parts[1]) || 0;
+                        const slot = parts[2];
+                        const description = parts[3] || '';
+                        
+                        addItemToContainer(
+                            name,
+                            1,
+                            value,
+                            slot,
+                            unassignedItemsContainer,
+                            false,
+                            description
+                        );
+                    }
+                });
+                
+                itemsModal.style.display = 'none';
+                itemsTextarea.value = '';
+                updateTotals();
+            });
+            
             // Scroll to top button
             scrollToTopBtn.addEventListener('click', function() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
-            
-            // Load data from Google Sheets
-            async function loadFromGoogleSheets() {
-                try {
-                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}?key=${apiKey}`;
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
-                    if (data.values && data.values.length > 1) {
-                        // Clear existing data
-                        charactersContainer.innerHTML = '';
-                        unassignedItemsContainer.innerHTML = '';
-                        
-                        // Load characters from Characters sheet
-                        await loadCharactersFromSheet();
-                        
-                        // Process loot items
-                        const headers = data.values[0];
-                        const rows = data.values.slice(1);
-                        
-                        const nameIndex = headers.indexOf("Название");
-                        const slotIndex = headers.indexOf("Слот");
-                        const valueIndex = headers.indexOf("Цена (gp)");
-                        const descriptionIndex = headers.indexOf("Описание");
-                        
-                        rows.forEach(row => {
-                            const name = nameIndex !== -1 ? row[nameIndex] : '';
-                            const slot = slotIndex !== -1 ? row[slotIndex] : 'Other';
-                            const value = valueIndex !== -1 ? parseFloat(row[valueIndex]) || 0 : 0;
-                            const description = descriptionIndex !== -1 ? row[descriptionIndex] : '';
-                            
-                            if (name && slot !== 'Category') {
-                                addItemToContainer(
-                                    name,
-                                    1,
-                                    value,
-                                    slot,
-                                    unassignedItemsContainer,
-                                    false,
-                                    description
-                                );
-                            }
-                        });
-                        
-                        updateTotals();
-                    }
-                } catch (error) {
-                    console.error("Error loading data from Google Sheets:", error);
-                    alert("Ошибка загрузки данных из Google Sheets. Проверьте консоль для подробностей.");
-                }
-            }
-            
-            // Load characters from Characters sheet
-            async function loadCharactersFromSheet() {
-                try {
-                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Characters?key=${apiKey}`;
-                    const response = await fetch(url);
-                    const data = await response.json();
-                    
-                    if (data.values && data.values.length > 1) {
-                        data.values.slice(1).forEach(row => {
-                            if (row[0]) {
-                                const imageUrl = row[1] ? 
-                                    (row[1].includes('drive.google.com') ? 
-                                     `https://drive.google.com/uc?export=view&id=${extractFileId(row[1])}` : 
-                                     row[1]) : 
-                                    '';
-                                addCharacter(row[0], '', imageUrl);
-                            }
-                        });
-                    }
-                } catch (error) {
-                    console.error("Error loading characters from Google Sheets:", error);
-                }
-            }
-            
-            // Helper function to extract file ID from Google Drive URL
-            function extractFileId(url) {
-                const match = url.match(/\/file\/d\/([^\/]+)/);
-                return match ? match[1] : url.split('/')[5];
-            }
             
             // Add character function
             function addCharacter(name, nickname = '', imageUrl = '') {
