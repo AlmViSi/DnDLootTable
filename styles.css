@@ -306,7 +306,7 @@ h1 {
 background: rgba(58, 58, 58, 0.5);
     display: flex;
     align-items: center;
-    font-size: 2rem; 
+    font-size: 1.8rem; 
     margin-bottom: 8px; 
     color: var(--text-accent);
     text-shadow: 
@@ -316,8 +316,8 @@ background: rgba(58, 58, 58, 0.5);
 
 .slot-label img {
 background: rgba(58, 58, 58, 1);
-    width: 80px;
-    height: 80px; 
+    width: 64px;
+    height: 64px; 
     margin-right: 15px; 
     object-fit: contain;
 }
