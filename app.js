@@ -1,4 +1,8 @@
-// Конфигурация слотов и элементов интерфейса
+// Глобальные переменные для отслеживания состояния
+let draggedItem = null;
+let sourceContainer = null;
+
+// Конфигурация слотов
 const slotIcons = {
     'Armor': 'https://i.ibb.co/Wv6zmFST/Armor-pixian-ai.png',
     'Arms': 'https://i.ibb.co/mrSzqfQv/Arms-pixian-ai.png',
@@ -51,40 +55,24 @@ const closeButtons = document.querySelectorAll('.close');
 const refreshDataBtn = document.getElementById('refreshData');
 const scrollToTopBtn = document.getElementById('scrollToTop');
 
-// Инициализация при загрузке
+// Инициализация приложения
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     loadData();
     setupRealTimeUpdates();
+    setupUnassignedDropTarget(unassignedItemsContainer);
 });
 
 // Настройка обработчиков событий
 function setupEventListeners() {
-    // Очищаем все старые обработчики перед добавлением новых
-    addCharacterBtn.onclick = null;
-    addItemBtn.onclick = null;
-    saveCharacterBtn.onclick = null;
-    saveItemsBtn.onclick = null;
-    refreshDataBtn.onclick = null;
-    scrollToTopBtn.onclick = null;
-
-    // Добавляем новые обработчики
-    addCharacterBtn.addEventListener('click', () => {
-        characterModal.style.display = 'block';
-        document.getElementById('characterName').focus();
-    });
-    
-    addItemBtn.addEventListener('click', () => {
-        itemsModal.style.display = 'block';
-        itemsTextarea.focus();
-    });
-    
-    saveCharacterBtn.addEventListener('click', saveCharacter);
-    saveItemsBtn.addEventListener('click', saveItems);
+    addCharacterBtn.addEventListener('click', () => characterModal.style.display = 'block');
+    addItemBtn.addEventListener('click', () => itemsModal.style.display = 'block');
     refreshDataBtn.addEventListener('click', refreshData);
     scrollToTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
-    // Обработчики закрытия модальных окон
+    saveCharacterBtn.addEventListener('click', saveCharacter);
+    saveItemsBtn.addEventListener('click', saveItems);
+
     closeButtons.forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.modal').style.display = 'none';
@@ -98,59 +86,11 @@ function setupEventListeners() {
     });
 }
 
-// Загрузка данных из Firestore
-async function loadData() {
-    try {
-        // Очищаем контейнеры перед загрузкой
-        charactersContainer.innerHTML = '';
-        unassignedItemsContainer.innerHTML = '';
-
-        // Загрузка персонажей с проверкой на дубли
-        const charactersSnapshot = await db.collection("characters").get();
-        const loadedCharacters = new Set();
-
-        charactersSnapshot.forEach(doc => {
-            if (!loadedCharacters.has(doc.id)) {
-                const char = doc.data();
-                addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
-                loadedCharacters.add(doc.id);
-            }
-        });
-
-        // Загрузка предметов
-        const itemsSnapshot = await db.collection("items").get();
-        const loadedItems = new Set();
-
-        itemsSnapshot.forEach(doc => {
-            if (!loadedItems.has(doc.id)) {
-                const item = doc.data();
-                addItemToContainer(item, doc.id);
-                loadedItems.add(doc.id);
-            }
-        });
-    } catch (error) {
-        console.error("Ошибка загрузки данных:", error);
-    }
-}
-
-// Реал-тайм обновления
+// Настройка реал-тайм обновлений
 function setupRealTimeUpdates() {
-    db.collection("items").onSnapshot(snapshot => {
-        snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
-                addItemToContainer(change.doc.data(), change.doc.id);
-            }
-            if (change.type === "removed") {
-                const itemElement = document.getElementById(`item-${change.doc.id}`);
-                if (itemElement) itemElement.remove();
-                updateTotals();
-            }
-        });
-    });
-
     db.collection("characters").onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
-            if (change.type === "added") {
+            if (change.type === "added" && !document.getElementById(`character-${change.doc.id}`)) {
                 const char = change.doc.data();
                 addCharacter(char.name, char.nickname, char.imageUrl, change.doc.id);
             }
@@ -160,18 +100,84 @@ function setupRealTimeUpdates() {
             }
         });
     });
+
+    db.collection("items").onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            if (change.type === "added" && !document.getElementById(`item-${change.doc.id}`)) {
+                addItemToContainer(change.doc.data(), change.doc.id);
+            }
+            if (change.type === "modified") {
+                const item = change.doc.data();
+                const itemElement = document.getElementById(`item-${change.doc.id}`);
+                if (itemElement) {
+                    updateItemPosition(itemElement, item);
+                }
+            }
+            if (change.type === "removed") {
+                const itemElement = document.getElementById(`item-${change.doc.id}`);
+                if (itemElement) itemElement.remove();
+            }
+        });
+        updateTotals();
+    });
 }
 
-// Добавление персонажа в DOM и Firestore
-async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
-    // Проверяем, не существует ли уже персонаж с таким ID
-    if (id && document.getElementById(`character-${id}`)) {
-        console.warn(`Персонаж с ID ${id} уже существует`);
-        return;
-    }
+// Обновление позиции предмета
+function updateItemPosition(itemElement, itemData) {
+    const currentContainer = itemElement.parentNode;
+    const newContainer = itemData.characterId 
+        ? document.querySelector(`#character-${itemData.characterId} .slot[data-slot="${itemData.slot}"]`)
+        : unassignedItemsContainer;
 
+    if (newContainer && currentContainer !== newContainer) {
+        currentContainer.removeChild(itemElement);
+        newContainer.appendChild(itemElement);
+        
+        // Обновляем иконку
+        const icon = itemElement.querySelector('.item-icon');
+        if (newContainer === unassignedItemsContainer) {
+            if (!icon) {
+                const iconHTML = `<img src="${slotIcons[itemData.slot] || slotIcons.Other}" class="item-icon" alt="${itemData.slot}">`;
+                itemElement.querySelector('.item-content').insertAdjacentHTML('afterbegin', iconHTML);
+            }
+        } else if (icon) {
+            icon.remove();
+        }
+        
+        // Обновляем группу слотов
+        const slotGroup = newContainer.closest('.slot-group');
+        if (slotGroup) slotGroup.classList.add('has-items');
+    }
+}
+
+// Загрузка данных
+async function loadData() {
+    try {
+        // Очищаем контейнеры
+        charactersContainer.innerHTML = '';
+        unassignedItemsContainer.innerHTML = '';
+
+        // Загрузка персонажей
+        const charactersSnapshot = await db.collection("characters").get();
+        charactersSnapshot.forEach(doc => {
+            const char = doc.data();
+            addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
+        });
+
+        // Загрузка предметов
+        const itemsSnapshot = await db.collection("items").get();
+        itemsSnapshot.forEach(doc => {
+            const item = doc.data();
+            addItemToContainer(item, doc.id);
+        });
+    } catch (error) {
+        console.error("Ошибка загрузки данных:", error);
+    }
+}
+
+// Добавление персонажа
+async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
     if (!id) {
-        // Создаем нового персонажа в Firestore
         const docRef = await db.collection("characters").add({
             name: name,
             nickname: nickname,
@@ -181,7 +187,6 @@ async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
         id = docRef.id;
     }
     
-    // Создаем DOM-элемент персонажа
     const characterId = `character-${id}`;
     const character = document.createElement('div');
     character.className = 'character';
@@ -238,7 +243,7 @@ async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
         }
     });
     
-    // Настройка drag and drop для слотов
+    // Настройка drop-зон
     character.querySelectorAll('.slot').forEach(slot => {
         setupDropTarget(slot);
     });
@@ -246,29 +251,28 @@ async function addCharacter(name, nickname = '', imageUrl = '', id = '') {
     setupCharacterDropTarget(character);
 }
 
-// Добавление предмета в DOM
-function addItemToContainer(itemData, itemId = '') {
-    const isCharacterSlot = this instanceof HTMLElement && this.classList.contains('slot');
-    const container = isCharacterSlot ? this : unassignedItemsContainer;
-    
+// Добавление предмета в контейнер
+function addItemToContainer(itemData, itemId = '', container = null) {
+    const targetContainer = container || 
+                         (itemData.characterId 
+                          ? document.querySelector(`#character-${itemData.characterId} .slot[data-slot="${itemData.slot}"]`) 
+                          : unassignedItemsContainer);
+
+    if (!targetContainer) return;
+
     const itemElement = document.createElement('div');
     itemElement.className = 'item';
-    itemElement.id = 'item-' + (itemId || Date.now());
+    itemElement.id = `item-${itemId}`;
     itemElement.draggable = true;
     itemElement.dataset.value = itemData.value;
-    itemElement.dataset.isGold = itemData.isGold || false;
     itemElement.dataset.slot = itemData.slot;
     itemElement.dataset.description = itemData.description || '';
-    
-    const iconHTML = !isCharacterSlot ? 
-        `<img src="${slotIcons[itemData.slot] || slotIcons.Other}" class="item-icon" alt="${itemData.slot}" onerror="this.style.display='none'">` : 
-        '';
-    
-    let descriptionHTML = '';
-    if (itemData.description) {
-        descriptionHTML = `<div class="item-description">${itemData.description}</div>`;
-    }
-    
+
+    const showIcon = targetContainer === unassignedItemsContainer;
+    const iconHTML = showIcon 
+                   ? `<img src="${slotIcons[itemData.slot] || slotIcons.Other}" class="item-icon" alt="${itemData.slot}" onerror="this.style.display='none'">` 
+                   : '';
+
     itemElement.innerHTML = `
         <div class="item-content">
             ${iconHTML}
@@ -276,66 +280,190 @@ function addItemToContainer(itemData, itemId = '') {
                 <div class="item-name">${itemData.name}</div>
                 <div class="item-details">
                     <span>${itemData.value} зол.</span>
-                    ${itemData.isGold ? '<span>💰</span>' : ''}
                 </div>
-                ${descriptionHTML}
+                ${itemData.description ? `<div class="item-description">${itemData.description}</div>` : ''}
             </div>
         </div>
         <div class="item-actions">
-            <div class="edit-item" data-item="${itemElement.id}">✎</div>
-            <div class="delete-item" data-item="${itemElement.id}">✕</div>
+            <div class="edit-item">✎</div>
+            <div class="delete-item">✕</div>
         </div>
     `;
-    
-    container.appendChild(itemElement);
-    
-    // Если это слот персонажа, показываем группу слотов
-    if (isCharacterSlot) {
-        const slotGroup = container.closest('.slot-group');
-        if (slotGroup) {
-            slotGroup.classList.add('has-items');
-        }
+
+    targetContainer.appendChild(itemElement);
+
+    if (targetContainer !== unassignedItemsContainer) {
+        const slotGroup = targetContainer.closest('.slot-group');
+        if (slotGroup) slotGroup.classList.add('has-items');
     }
+
+    setupDraggableItem(itemElement);
     
-    // Обработчик удаления предмета
+    // Обработчики действий
     itemElement.querySelector('.delete-item').addEventListener('click', async function(e) {
         e.stopPropagation();
         if (confirm('Удалить предмет?')) {
             await db.collection("items").doc(itemId).delete();
         }
     });
-    
-    // Обработчик редактирования предмета
+
     itemElement.querySelector('.edit-item').addEventListener('click', function(e) {
         e.stopPropagation();
         editItem(itemElement, itemId);
     });
-    
-    // Настройка drag and drop
-    setupDraggableItem(itemElement);
-    
-    updateTotals();
+
     return itemElement;
+}
+
+// Настройка перетаскивания предмета
+function setupDraggableItem(item) {
+    item.addEventListener('dragstart', function(e) {
+        draggedItem = this;
+        sourceContainer = this.parentNode;
+        e.dataTransfer.setData('text/plain', this.id);
+        setTimeout(() => {
+            this.classList.add('item-dragging');
+        }, 0);
+    });
+
+    item.addEventListener('dragend', function() {
+        this.classList.remove('item-dragging');
+        document.querySelectorAll('.slot-highlight').forEach(el => {
+            el.classList.remove('slot-highlight');
+        });
+        draggedItem = null;
+        sourceContainer = null;
+    });
+}
+
+// Настройка drop-зоны для слота
+function setupDropTarget(slot) {
+    slot.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('slot-highlight');
+    });
+
+    slot.addEventListener('dragleave', function() {
+        this.classList.remove('slot-highlight');
+    });
+
+    slot.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        this.classList.remove('slot-highlight');
+        const itemId = e.dataTransfer.getData('text/plain');
+        await handleItemDrop(this, itemId);
+    });
+}
+
+// Настройка drop-зоны для персонажа
+function setupCharacterDropTarget(character) {
+    character.addEventListener('dragover', function(e) {
+        e.preventDefault();
+    });
+
+    character.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        const itemId = e.dataTransfer.getData('text/plain');
+        const itemElement = document.getElementById(itemId);
+        
+        if (itemElement) {
+            const slotType = itemElement.dataset.slot;
+            const slot = character.querySelector(`.slot[data-slot="${slotType}"]`) || 
+                         character.querySelector('.slot[data-slot="Other"]');
+            
+            if (slot) {
+                await handleItemDrop(slot, itemId);
+            }
+        }
+    });
+}
+
+// Настройка drop-зоны для нераспределенных предметов
+function setupUnassignedDropTarget(container) {
+    container.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('slot-highlight');
+    });
+
+    container.addEventListener('dragleave', function() {
+        this.classList.remove('slot-highlight');
+    });
+
+    container.addEventListener('drop', async function(e) {
+        e.preventDefault();
+        this.classList.remove('slot-highlight');
+        const itemId = e.dataTransfer.getData('text/plain');
+        await handleItemDrop(this, itemId);
+    });
+}
+
+// Обработка сброса предмета
+async function handleItemDrop(targetContainer, itemId) {
+    const itemElement = document.getElementById(itemId);
+    if (!itemElement) return;
+
+    const itemRef = db.collection("items").doc(itemId.replace('item-', ''));
+    const characterId = targetContainer.closest('.character')?.id.replace('character-', '') || null;
+    const slotType = targetContainer.dataset.slot || 'Other';
+
+    try {
+        // Визуальное перемещение
+        if (sourceContainer && sourceContainer !== targetContainer) {
+            sourceContainer.removeChild(itemElement);
+            targetContainer.appendChild(itemElement);
+            
+            // Обновляем иконку
+            const icon = itemElement.querySelector('.item-icon');
+            if (targetContainer === unassignedItemsContainer) {
+                if (!icon) {
+                    const iconHTML = `<img src="${slotIcons[itemElement.dataset.slot] || slotIcons.Other}" class="item-icon" alt="${itemElement.dataset.slot}">`;
+                    itemElement.querySelector('.item-content').insertAdjacentHTML('afterbegin', iconHTML);
+                }
+            } else if (icon) {
+                icon.remove();
+            }
+            
+            // Обновляем группу слотов
+            const slotGroup = targetContainer.closest('.slot-group');
+            if (slotGroup) slotGroup.classList.add('has-items');
+        }
+
+        // Обновляем данные в Firestore
+        await itemRef.update({
+            characterId: characterId,
+            slot: slotType
+        });
+
+    } catch (error) {
+        console.error("Ошибка при перемещении предмета:", error);
+        // Возвращаем предмет на место при ошибке
+        if (sourceContainer && itemElement.parentNode !== sourceContainer) {
+            targetContainer.removeChild(itemElement);
+            sourceContainer.appendChild(itemElement);
+        }
+    }
 }
 
 // Редактирование предмета
 async function editItem(itemElement, itemId) {
     const newName = prompt("Новое название:", itemElement.querySelector('.item-name').textContent);
     if (newName === null) return;
-    
+
     const newValue = parseFloat(prompt("Новая цена:", itemElement.dataset.value));
     if (isNaN(newValue)) return;
-    
+
     const newDescription = prompt("Новое описание:", itemElement.dataset.description || "");
-    
-    // Обновляем в Firestore
-    await db.collection("items").doc(itemId).update({
-        name: newName,
-        value: newValue,
-        description: newDescription
-    });
-    
-    // Локальное обновление (onSnapshot автоматически обновит интерфейс)
+
+    try {
+        await db.collection("items").doc(itemId).update({
+            name: newName,
+            value: newValue,
+            description: newDescription
+        });
+    } catch (error) {
+        console.error("Ошибка при редактировании предмета:", error);
+        alert('Ошибка при сохранении изменений');
+    }
 }
 
 // Сохранение персонажа
@@ -353,7 +481,8 @@ async function saveCharacter() {
         await db.collection("characters").add({
             name: name,
             nickname: nickname || "",
-            imageUrl: imageUrl || ""
+            imageUrl: imageUrl || "",
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
         characterModal.style.display = 'none';
@@ -389,7 +518,8 @@ async function saveItems() {
                     value: parseFloat(parts[1]) || 0,
                     slot: parts[2],
                     description: parts[3] || "",
-                    characterId: null
+                    characterId: null,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
         });
@@ -413,9 +543,7 @@ function updateTotals() {
     // Показываем только те группы, где есть предметы
     document.querySelectorAll('.slot .item').forEach(item => {
         const slotGroup = item.closest('.slot-group');
-        if (slotGroup) {
-            slotGroup.classList.add('has-items');
-        }
+        if (slotGroup) slotGroup.classList.add('has-items');
     });
     
     // Обновляем итоги для каждого персонажа
@@ -452,87 +580,15 @@ function updateTotals() {
     document.getElementById('globalItemsTotal').textContent = globalItems;
 }
 
-// Drag and Drop функции
-function setupDraggableItem(item) {
-    item.addEventListener('dragstart', function(e) {
-        e.dataTransfer.setData('text/plain', this.id);
-        setTimeout(() => {
-            this.classList.add('item-dragging');
-        }, 0);
-    });
-    
-    item.addEventListener('dragend', function() {
-        this.classList.remove('item-dragging');
-        document.querySelectorAll('.slot-highlight').forEach(el => {
-            el.classList.remove('slot-highlight');
-        });
-    });
-}
-
-async function handleItemDrop(targetSlot, itemId) {
-    const itemElement = document.getElementById(itemId);
-    if (!itemElement) return;
-
-    const itemRef = db.collection("items").doc(itemId.replace('item-', ''));
-    const characterId = targetSlot.closest('.character')?.id.replace('character-', '') || null;
-
-    try {
-        await itemRef.update({
-            characterId: characterId,
-            slot: targetSlot.dataset.slot
-        });
-        // Локальное обновление произойдёт автоматически через onSnapshot
-    } catch (error) {
-        console.error("Ошибка при перемещении предмета:", error);
-    }
-}
-
-function setupDropTarget(slot) {
-    slot.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        slot.classList.add('slot-highlight');
-    });
-
-    slot.addEventListener('dragleave', () => {
-        slot.classList.remove('slot-highlight');
-    });
-
-    slot.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        slot.classList.remove('slot-highlight');
-        const itemId = e.dataTransfer.getData('text/plain');
-        await handleItemDrop(slot, itemId);
-    });
-}
-
-function setupCharacterDropTarget(character) {
-    character.addEventListener('dragover', function(e) {
-        e.preventDefault();
-    });
-
-    character.addEventListener('drop', async function(e) {
-        e.preventDefault();
-        const itemId = e.dataTransfer.getData('text/plain');
-        const slotType = document.getElementById(itemId).dataset.slot;
-        const slot = character.querySelector(`.slot[data-slot="${slotType}"]`) || 
-                     character.querySelector('.slot[data-slot="Other"]');
-        
-        if (slot) {
-            await handleItemDrop(slot, itemId);
-        }
-    });
-}
-
 // Обновление данных
 async function refreshData() {
-    // Добавляем индикатор загрузки
     refreshDataBtn.disabled = true;
     refreshDataBtn.innerHTML = '<div class="spinner"></div>';
     
     try {
         await loadData();
     } catch (error) {
-        console.error("Ошибка при обновлении:", error);
+        console.error("Ошибка при обновлении данных:", error);
     } finally {
         refreshDataBtn.disabled = false;
         refreshDataBtn.textContent = '↻';
