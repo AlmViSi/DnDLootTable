@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <title>D&D 3.5 Распределение добычи</title>
     <link href="https://fonts.googleapis.com/css2?family=Balthazar&display=swap" rel="stylesheet">
 </head>
@@ -90,6 +88,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
             const charactersContainer = document.getElementById('charactersContainer');
             const unassignedItemsContainer = document.getElementById('unassignedItems');
             const scrollToTopBtn = document.getElementById('scrollToTop');
@@ -108,8 +107,10 @@
             const itemsTextarea = document.getElementById('itemsTextarea');
             const closeButtons = document.querySelectorAll('.close');
             
+            // Текущий редактируемый предмет
             let currentEditingItem = null;
             
+            // Static slot icons configuration
             const slotIcons = {
                 'Armor': 'https://i.ibb.co/Wv6zmFST/Armor-pixian-ai.png',
                 'Arms': 'https://i.ibb.co/mrSzqfQv/Arms-pixian-ai.png',
@@ -129,6 +130,7 @@
                 'Weapon': 'https://i.ibb.co/FLyv7J4P/Weapons-pixian-ai.png'
             };
             
+            // Slot configuration with icons
             const slotConfig = [
                 { key: 'Head', name: 'Голова', icon: slotIcons.Head },
                 { key: 'Face', name: 'Лицо', icon: slotIcons.Face },
@@ -148,11 +150,15 @@
                 { key: 'Misc', name: 'Разное', icon: slotIcons.Misc }
             ];
             
+            // Initialize with empty state
             initializeApp();
             
+            // Initialize app with sample data
             function initializeApp() {
+                // Add sample character
                 addCharacter('Пример Персонажа', 'Прозвище', '');
                 
+                // Add sample items
                 const sampleItems = [
                     'Меч света | 1500 | Weapon | Светится в темноте',
                     'Кольцо защиты | 2000 | Ring | +1 к защите',
@@ -177,13 +183,17 @@
                 updateTotals();
             }
             
+            // Refresh data button
             refreshDataBtn.addEventListener('click', function() {
+                // Clear existing data
                 charactersContainer.innerHTML = '';
                 unassignedItemsContainer.innerHTML = '';
                 
+                // Reinitialize with sample data
                 initializeApp();
             });
             
+            // Edit item modal
             function showEditModal(item) {
                 currentEditingItem = item;
                 editItemName.value = item.querySelector('.item-name').textContent;
@@ -197,7 +207,8 @@
                 currentEditingItem = null;
             }
             
-           saveEditBtn.addEventListener('click', function() {
+            // Save edited item
+            saveEditBtn.addEventListener('click', function() {
                 if (currentEditingItem) {
                     currentEditingItem.querySelector('.item-name').textContent = editItemName.value;
                     currentEditingItem.dataset.description = editItemDescription.value;
@@ -218,34 +229,40 @@
             
             cancelEditBtn.addEventListener('click', hideEditModal);
             
+            // Close modal when clicking outside
             editModal.addEventListener('click', function(e) {
                 if (e.target === editModal) {
                     hideEditModal();
                 }
             });
             
+            // Character modal
             addCharacterBtn.addEventListener('click', function() {
                 characterModal.style.display = 'flex';
                 document.getElementById('characterName').focus();
             });
             
+            // Items modal
             addItemBtn.addEventListener('click', function() {
                 itemsModal.style.display = 'flex';
                 itemsTextarea.focus();
             });
             
+            // Close buttons
             closeButtons.forEach(btn => {
                 btn.addEventListener('click', function() {
                     this.closest('.modal').style.display = 'none';
                 });
             });
             
+            // Close modals when clicking outside
             window.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal')) {
                     e.target.style.display = 'none';
                 }
             });
             
+            // Save character
             saveCharacterBtn.addEventListener('click', function() {
                 const name = document.getElementById('characterName').value;
                 const nickname = document.getElementById('characterNickname').value;
@@ -255,6 +272,7 @@
                     addCharacter(name, nickname, imageUrl);
                     characterModal.style.display = 'none';
                     
+                    // Clear fields
                     document.getElementById('characterName').value = '';
                     document.getElementById('characterNickname').value = '';
                     document.getElementById('characterImage').value = '';
@@ -263,6 +281,7 @@
                 }
             });
             
+            // Save items
             saveItemsBtn.addEventListener('click', function() {
                 const itemsText = itemsTextarea.value;
                 const lines = itemsText.split('\n').filter(line => line.trim());
@@ -292,16 +311,19 @@
                 updateTotals();
             });
             
+            // Scroll to top button
             scrollToTopBtn.addEventListener('click', function() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
             
+            // Add character function
             function addCharacter(name, nickname = '', imageUrl = '') {
                 const characterId = 'character-' + Date.now();
                 const character = document.createElement('div');
                 character.className = 'character';
                 character.id = characterId;
                 
+                // Create background element if image URL provided
                 if (imageUrl) {
                     const bg = document.createElement('div');
                     bg.className = 'character-background';
@@ -309,9 +331,11 @@
                     character.appendChild(bg);
                 }
                 
+                // Create content container
                 const content = document.createElement('div');
                 content.className = 'character-content';
                 
+                // Generate slots HTML with icons
                 let slotsHTML = '';
                 slotConfig.forEach(slot => {
                     const iconHTML = slot.icon ? `<img src="${slot.icon}" alt="${slot.name}" onerror="this.style.display='none'">` : '';
@@ -579,7 +603,6 @@
                 document.getElementById('globalItemsTotal').textContent = globalItems;
             }
         });
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    </script>
 </body>
 </html>
