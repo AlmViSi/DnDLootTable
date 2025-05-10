@@ -56,11 +56,28 @@ const refreshDataBtn = document.getElementById('refreshData');
 const scrollToTopBtn = document.getElementById('scrollToTop');
 
 // Инициализация приложения
-document.addEventListener('DOMContentLoaded', function() {
-    setupEventListeners();
-    loadData();
-    setupRealTimeUpdates();
-    setupUnassignedDropTarget(unassignedItemsContainer);
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Инициализируем Firebase (на всякий случай)
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        // Настраиваем обработчики событий
+        setupEventListeners();
+        
+        // Загружаем данные
+        await loadData();
+        
+        // Настраиваем real-time обновления
+        setupRealTimeUpdates();
+        
+        // Настраиваем drop-зону для нераспределенных предметов
+        setupUnassignedDropTarget(unassignedItemsContainer);
+    } catch (error) {
+        console.error("Ошибка инициализации приложения:", error);
+        alert("Произошла ошибка при загрузке приложения. Пожалуйста, обновите страницу.");
+    }
 });
 
 // Настройка обработчиков событий
