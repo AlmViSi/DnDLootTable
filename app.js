@@ -106,22 +106,27 @@ async function loadData() {
         unassignedItemsContainer.innerHTML = '';
 
         // Загрузка персонажей с проверкой на дубли
-        const loadedCharacterIds = new Set();
         const charactersSnapshot = await db.collection("characters").get();
-        
+        const loadedCharacters = new Set();
+
         charactersSnapshot.forEach(doc => {
-            if (!loadedCharacterIds.has(doc.id)) {
+            if (!loadedCharacters.has(doc.id)) {
                 const char = doc.data();
                 addCharacter(char.name, char.nickname, char.imageUrl, doc.id);
-                loadedCharacterIds.add(doc.id);
+                loadedCharacters.add(doc.id);
             }
         });
 
         // Загрузка предметов
         const itemsSnapshot = await db.collection("items").get();
+        const loadedItems = new Set();
+
         itemsSnapshot.forEach(doc => {
-            const item = doc.data();
-            addItemToContainer(item, doc.id);
+            if (!loadedItems.has(doc.id)) {
+                const item = doc.data();
+                addItemToContainer(item, doc.id);
+                loadedItems.add(doc.id);
+            }
         });
     } catch (error) {
         console.error("Ошибка загрузки данных:", error);
@@ -464,51 +469,39 @@ function setupDraggableItem(item) {
     });
 }
 
-async function handleItemDrop(targetElement, itemId) {
+async function handleItemDrop(targetSlot, itemId) {
     const itemElement = document.getElementById(itemId);
     if (!itemElement) return;
 
-    const itemFirebaseId = itemId.replace('item-', '');
-    const itemData = {
-        name: itemElement.querySelector('.item-name').textContent,
-        value: parseFloat(itemElement.dataset.value),
-        slot: itemElement.dataset.slot,
-        description: itemElement.dataset.description || "",
-        isGold: itemElement.dataset.isGold === 'true'
-    };
-
-    // Определяем characterId (null для "Не распределено")
-    let characterId = null;
-    if (targetElement.closest('.character')) {
-        characterId = targetElement.closest('.character').id.replace('character-', '');
-    }
+    const itemRef = db.collection("items").doc(itemId.replace('item-', ''));
+    const characterId = targetSlot.closest('.character')?.id.replace('character-', '') || null;
 
     try {
-        await db.collection("items").doc(itemFirebaseId).update({
+        await itemRef.update({
             characterId: characterId,
-            slot: itemData.slot
+            slot: targetSlot.dataset.slot
         });
-        // Локальное обновление произойдет через onSnapshot
+        // Локальное обновление произойдёт автоматически через onSnapshot
     } catch (error) {
         console.error("Ошибка при перемещении предмета:", error);
     }
 }
 
 function setupDropTarget(slot) {
-    slot.addEventListener('dragover', function(e) {
+    slot.addEventListener('dragover', (e) => {
         e.preventDefault();
-        this.classList.add('slot-highlight');
+        slot.classList.add('slot-highlight');
     });
 
-    slot.addEventListener('dragleave', function() {
-        this.classList.remove('slot-highlight');
+    slot.addEventListener('dragleave', () => {
+        slot.classList.remove('slot-highlight');
     });
 
-    slot.addEventListener('drop', async function(e) {
+    slot.addEventListener('drop', async (e) => {
         e.preventDefault();
-        this.classList.remove('slot-highlight');
+        slot.classList.remove('slot-highlight');
         const itemId = e.dataTransfer.getData('text/plain');
-        await handleItemDrop(this, itemId);
+        await handleItemDrop(slot, itemId);
     });
 }
 
@@ -534,12 +527,12 @@ function setupCharacterDropTarget(character) {
 async function refreshData() {
     // Добавляем индикатор загрузки
     refreshDataBtn.disabled = true;
-    refreshDataBtn.textContent = 'Загрузка...';
+    refreshDataBtn.innerHTML = '<div class="spinner"></div>';
     
     try {
         await loadData();
     } catch (error) {
-        console.error("Ошибка при обновлении данных:", error);
+        console.error("Ошибка при обновлении:", error);
     } finally {
         refreshDataBtn.disabled = false;
         refreshDataBtn.textContent = '↻';
