@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D&D 3.5 Распределение добычи</title>
+    <link href="https://fonts.googleapis.com/css2?family=Balthazar&display=swap" rel="stylesheet">
+    <style>
+:root {
+    --bg-dark: #1a1a1a;
+    --bg-panel: #2a2a2a;
+    --text-main: #e0e0e0;
+    --text-accent: #d4af37;
+    --border: #444;
+    --column-bg: #333;
+    --item-bg: #3a3a3a;
+    --item-hover: #4a4a4a;
+    --danger: #c33;
+    --slot-bg: rgba(45, 45, 45, 0.8);
+    --character-width: 490px;
+    --character-font-size: 1.5rem;
+}
+
+/* Стили для полос прокрутки */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--text-accent);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c99c33;
+}
+
+body {
+    font-family: 'Balthazar', serif;
+    font-size: 16px;
+    background: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0;
+    padding: 20px;
+    background-image: url('https://i.ibb.co/fYYT69M8/b41391c6-3fd4-40ca-aad6-b383dba2d11b.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+h1 {
+    color: var(--text-accent);
+    text-align: center;
+    font-size: calc(var(--character-font-size) * 1.8);
+    text-shadow: 
+        2px 2px 3px #000,
+        0 0 5px #000;
+    border-bottom: 1px solid var(--text-accent);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    flex-shrink: 0;
+    background-color: rgba(26, 26, 26, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.character-title {
+    font-size: calc(var(--character-font-size) * 1.5);
+    text-align: center;
+    text-shadow: 
+        2px 2px 3px #000,
+        0 0 5px #000;
+    color: var(--text-accent);
+    margin: 0.5rem 0;
+    position: relative;
+    z-index: 2;
+}
+
+.character-nickname {
+    font-size: calc(var(--character-font-size) * 0.9);
+    color: var(--text-accent);
+    text-shadow: 
+        1px 1px 2px #000,
+        0 0 3px #000;
+    text-align: center;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+}
+
+.character-total-header {
+    font-size: calc(var(--character-font-size) * 0.9);
+    color: var(--text-accent);
+    text-shadow: 
+        1px 1px 2px #000,
+        0 0 3px #000;
+    text-align: center;
+}
+
+.character .item-name {
+    font-size: calc(var(--character-font-size) * 1.1);
+    text-shadow: 
+        1px 1px 2px #000,
+        0 0 3px #000;
+    color: var(--text-accent);
+    margin-bottom: 0.3rem;
+}
+
+.character .item-details {
+    font-size: calc(var(--character-font-size) * 0.8);
+    text-shadow: 
+        1px 1px 1px #000;
+    color: var(--text-main);
+}
+
+.character .item-description {
+    font-size: calc(var(--character-font-size) * 0.7);
+    text-shadow: 
+        1px 1px 1px #000;
+    color: var(--text-main);
+}
+
+.main-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 15px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+    background-color: rgba(26, 26, 26, 0.7);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.content-wrapper {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 15px;
+    position: relative;
+}
+
+.content-area {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    gap: 15px;
+    min-width: 0;
+}
+
+.unassigned-column {
+    width: var(--character-width);
+    background: var(--bg-panel);
+    border: 2px dashed var(--border);
+    border-radius: 5px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.unassigned-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.unassigned-title {
+    font-weight: bold;
+    color: #aaa;
+    font-size: 1.2rem;
+}
+
+.unassigned-items {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.buttons-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.add-button {
+    background: var(--text-accent);
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Balthazar', serif;
+    font-size: 1rem;
+    flex: 1;
+}
+
+.add-button:hover {
+    background: #c99c33;
+}
+
+.characters-container {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    flex-grow: 1;
+}
+
+.characters-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.character {
+    width: var(--character-width);
+    background-color: transparent;
+    border-radius: 5px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.character-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+    filter: brightness(1);
+}
+
+.character-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background-color: rgba(42, 42, 42, 0.0);
+}
+
+.character-header {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.character-title-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+.character-total-header {
+   font-size: 2rem;
+   background: rgba(58, 58, 58, 0.3)
+}
+
+.delete-character {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.character-slots {
+    flex-grow: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+    padding-right: 5px;
+    border-radius: 5px;
+}
+
+.slot-group {
+    display: none;
+    flex-direction: column;
+}
+
+.slot-group.has-items {
+    display: flex;
+}
+
+.slot-label {
+    display: flex;
+    align-items: center;
+    font-size: 2rem; 
+    margin-bottom: 8px; 
+    color: var(--text-accent);
+    text-shadow: 
+        1px 1px 2px #000,
+        0 0 3px #000;
+}
+
+.slot-label img {
+    width: 80px;
+    height: 80px; 
+    margin-right: 15px; 
+    object-fit: contain;
+}
+
+.slot {
+    background: transparent;
+    padding: 5px;
+    border-radius: 3px;
+    min-height: 50px;
+    flex-grow: 1;
+}
+
+.character .item {
+    background: rgba(58, 58, 58, 0.3);
+    border-left: none;
+    padding: 10px;
+    margin-bottom: 8px;
+    backdrop-filter: blur(2px);
+}
+
+.character .item:hover {
+    background: rgba(74, 74, 74, 0.7);
+    transform: none;
+}
+
+.character .item-icon {
+    display: none;
+}
+
+.item {
+    background: var(--item-bg);
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 3px;
+    cursor: grab;
+    transition: all 0.2s;
+    border-left: 3px solid var(--text-accent);
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.item:hover {
+    background: var(--item-hover);
+    transform: translateX(3px);
+}
+
+.item-dragging {
+    opacity: 0.5;
+    transform: scale(0.98);
+}
+
+.item-content {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.item-icon {
+    width: 48px;
+    height: 48px;
+    margin-right: 15px;
+    object-fit: contain;
+}
+
+.item-text {
+    flex-grow: 1;
+}
+
+.item-name {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+.item-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+.item-description {
+    display: none;
+    margin-top: 5px;
+    font-size: 0.8rem;
+    color: #ccc;
+    border-top: 1px dashed var(--border);
+    padding-top: 5px;
+}
+
+.item:hover .item-description {
+    display: block;
+}
+
+.item-actions {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.item:hover .item-actions {
+    opacity: 1;
+}
+
+.edit-item, .delete-item {
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 0.8rem;
+    background: rgba(0, 0, 0, 0.5);
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+.edit-item:hover {
+    color: var(--text-accent);
+}
+
+.delete-item {
+    color: var(--danger);
+}
+
+.slot-highlight {
+    border: 2px dashed var(--text-accent);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.total-section {
+    display: flex;
+    justify-content: space-around;
+    background: var(--bg-panel);
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    flex-shrink: 0;
+}
+
+.total-box {
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-value {
+    font-size: 1.5rem;
+    color: #FFD700;
+    text-shadow: 
+        1px 1px 2px #000,
+        0 0 3px #000;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.total-box div:first-child {
+    color: #FFD700;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    text-shadow: 1px 1px 1px #000;
+}
+
+.scroll-indicator {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    background: var(--text-accent);
+    color: #000;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-panel);
+    padding: 20px;
+    border-radius: 5px;
+    width: 400px;
+    max-width: 90%;
+}
+
+.modal-title {
+    color: var(--text-accent);
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: var(--item-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+}
+
+.modal-textarea {
+    width: 100%;
+    height: 200px;
+    padding: 8px;
+    margin-bottom: 10px;
+    background: var(--item-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    resize: vertical;
+}
+
+.modal-button {
+    background: var(--text-accent);
+    color: #000;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Balthazar', serif;
+}
+
+.modal-button:hover {
+    background: #c99c33;
+}
+
+.close {
+    color: var(--text-accent);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #c99c33;
+}
+
+.refresh-btn {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background: var(--text-accent);
+    color: #000;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+}
+
+@media (max-width: 1600px) {
+    :root {
+        --character-width: 448px;
+    }
+}
+
+@media (max-width: 1200px) {
+    :root {
+        --character-width: 420px;
+        --character-font-size: 1.3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .slot-label {
+        font-size: 1.6rem;
+    }
+    
+    .content-area {
+        flex-direction: column;
+    }
+    
+    .unassigned-column {
+        width: auto;
+    }
+    
+    .characters-container {
+        flex-direction: column;
+        min-width: 0;
+    }
+    
+    .character {
+        width: auto;
+        height: 500px;
+    }
+    
+    .slot-label img {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .item-icon {
+        width: 36px;
+        height: 36px;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <button class="refresh-btn" id="refreshData">↻</button>
+        
+        <div class="content-wrapper">
+            <div class="content-area">
+                <div class="unassigned-column">
+                    <div class="unassigned-header">
+                        <div class="unassigned-title">Не распределено</div>
+                    </div>
+                    <div class="unassigned-items" id="unassignedItems"></div>
+                    <div class="character-total">Всего: <span id="unassignedTotal">0 зол.</span></div>
+                    
+                    <div class="buttons-row">
+                        <button class="add-button" id="addCharacterBtn">+ Персонаж</button>
+                        <button class="add-button" id="addItemBtn">+ Предмет</button>
+                    </div>
+                </div>
+                
+                <div class="characters-container" id="charactersContainer">
+                    <!-- Персонажи будут добавлены здесь через JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="total-section">
+            <div class="total-box">
+                <div>Всего золота</div>
+                <div class="total-value" id="globalGoldTotal">0 зол.</div>
+            </div>
+            <div class="total-box">
+                <div>Всего предметов</div>
+                <div class="total-value" id="globalItemsTotal">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для редактирования предмета -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-title">Редактировать предмет</div>
+            <input type="text" id="editItemName" placeholder="Название предмета" class="modal-input">
+            <textarea id="editItemDescription" placeholder="Описание предмета" class="modal-textarea"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-button" id="cancelEdit">Отмена</button>
+                <button class="modal-button" id="saveEdit">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления персонажа -->
+    <div class="modal" id="characterModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-title">Добавить персонажа</div>
+            <input type="text" id="characterName" placeholder="Имя персонажа" class="modal-input" required>
+            <input type="text" id="characterNickname" placeholder="Прозвище (опционально)" class="modal-input">
+            <input type="text" id="characterImage" placeholder="URL изображения (опционально)" class="modal-input">
+            <div class="modal-buttons">
+                <button class="modal-button" id="saveCharacter">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления предметов -->
+    <div class="modal" id="itemsModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-title">Добавить предметы</div>
+            <p>Формат: Название | Цена (gp) | Слот | Описание (опционально)</p>
+            <p>Пример: <em>Меч света | 1500 | Weapon | Светится в темноте</em></p>
+            <textarea id="itemsTextarea" class="modal-textarea" placeholder="Введите предметы, каждый с новой строки"></textarea>
+            <div class="modal-buttons">
+                <button class="modal-button" id="saveItems">Добавить предметы</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="scroll-indicator" id="scrollToTop">↑</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const charactersContainer = document.getElementById('charactersContainer');
+            const unassignedItemsContainer = document.getElementById('unassignedItems');
+            const scrollToTopBtn = document.getElementById('scrollToTop');
+            const editModal = document.getElementById('editModal');
+            const editItemName = document.getElementById('editItemName');
+            const editItemDescription = document.getElementById('editItemDescription');
+            const cancelEditBtn = document.getElementById('cancelEdit');
+            const saveEditBtn = document.getElementById('saveEdit');
+            const refreshDataBtn = document.getElementById('refreshData');
+            const addCharacterBtn = document.getElementById('addCharacterBtn');
+            const addItemBtn = document.getElementById('addItemBtn');
+            const characterModal = document.getElementById('characterModal');
+            const itemsModal = document.getElementById('itemsModal');
+            const saveCharacterBtn = document.getElementById('saveCharacter');
+            const saveItemsBtn = document.getElementById('saveItems');
+            const itemsTextarea = document.getElementById('itemsTextarea');
+            const closeButtons = document.querySelectorAll('.close');
+            
+            // Текущий редактируемый предмет
+            let currentEditingItem = null;
+            
+            // Static slot icons configuration
+            const slotIcons = {
+                'Armor': 'https://i.ibb.co/Wv6zmFST/Armor-pixian-ai.png',
+                'Arms': 'https://i.ibb.co/mrSzqfQv/Arms-pixian-ai.png',
+                'Body': 'https://i.ibb.co/GQZgcfyW/Body-pixian-ai.png',
+                'Face': 'https://i.ibb.co/8gDnTsfT/Face-pixian-ai.png',
+                'Feet': 'https://i.ibb.co/nqDJxwZW/Feets-pixian-ai.png',
+                'Hands': 'https://i.ibb.co/gb27yx9S/Hands-pixian-ai.png',
+                'Head': 'https://i.ibb.co/b51WW4QR/Head-pixian-ai.png',
+                'Misc': 'https://i.ibb.co/ks4jh5C9/Misc-pixian-ai.png',
+                'Other': 'https://i.ibb.co/YBGy1bYC/Other-pixian-ai.png',
+                'Ring': 'https://i.ibb.co/HLScw4bm/Ring-pixian-ai.png',
+                'Shoulder': 'https://i.ibb.co/35DJcS2q/Cloak-pixian-ai.png',
+                'Throat': 'https://i.ibb.co/KcpSR01R/Throat-pixian-ai.png',
+                'Torso': 'https://i.ibb.co/HDtWYCHm/Torso-pixian-ai.png',
+                'Tools': 'https://i.ibb.co/Rp826FvD/Tools-pixian-ai.png',
+                'Waist': 'https://i.ibb.co/whxjqPLK/Waist-pixian-ai.png',
+                'Weapon': 'https://i.ibb.co/FLyv7J4P/Weapons-pixian-ai.png'
+            };
+            
+            // Slot configuration with icons
+            const slotConfig = [
+                { key: 'Head', name: 'Голова', icon: slotIcons.Head },
+                { key: 'Face', name: 'Лицо', icon: slotIcons.Face },
+                { key: 'Throat', name: 'Шея', icon: slotIcons.Throat },
+                { key: 'Shoulder', name: 'Плечи', icon: slotIcons.Shoulder },
+                { key: 'Armor', name: 'Доспех', icon: slotIcons.Armor },
+                { key: 'Weapon', name: 'Оружие', icon: slotIcons.Weapon },
+                { key: 'Body', name: 'Тело', icon: slotIcons.Body },
+                { key: 'Torso', name: 'Торс', icon: slotIcons.Torso },
+                { key: 'Arms', name: 'Руки', icon: slotIcons.Arms },
+                { key: 'Hands', name: 'Перчатки', icon: slotIcons.Hands },
+                { key: 'Feet', name: 'Ноги', icon: slotIcons.Feet },
+                { key: 'Waist', name: 'Пояс', icon: slotIcons.Waist },
+                { key: 'Ring', name: 'Кольцо', icon: slotIcons.Ring },
+                { key: 'Tools', name: 'Инструменты', icon: slotIcons.Tools },
+                { key: 'Other', name: 'Другое', icon: slotIcons.Other },
+                { key: 'Misc', name: 'Разное', icon: slotIcons.Misc }
+            ];
+            
+            // Initialize with empty state
+            initializeApp();
+            
+            // Initialize app with sample data
+            function initializeApp() {
+                // Add sample character
+                addCharacter('Пример Персонажа', 'Прозвище', '');
+                
+                // Add sample items
+                const sampleItems = [
+                    'Меч света | 1500 | Weapon | Светится в темноте',
+                    'Кольцо защиты | 2000 | Ring | +1 к защите',
+                    'Нагрудник дракона | 3500 | Armor | Из чешуи красного дракона'
+                ];
+                
+                sampleItems.forEach(item => {
+                    const parts = item.split('|').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        addItemToContainer(
+                            parts[0],
+                            1,
+                            parseFloat(parts[1]) || 0,
+                            parts[2],
+                            unassignedItemsContainer,
+                            false,
+                            parts[3] || ''
+                        );
+                    }
+                });
+                
+                updateTotals();
+            }
+            
+            // Refresh data button
+            refreshDataBtn.addEventListener('click', function() {
+                // Clear existing data
+                charactersContainer.innerHTML = '';
+                unassignedItemsContainer.innerHTML = '';
+                
+                // Reinitialize with sample data
+                initializeApp();
+            });
+            
+            // Edit item modal
+            function showEditModal(item) {
+                currentEditingItem = item;
+                editItemName.value = item.querySelector('.item-name').textContent;
+                editItemDescription.value = item.dataset.description || '';
+                editModal.style.display = 'flex';
+                editItemName.focus();
+            }
+            
+            function hideEditModal() {
+                editModal.style.display = 'none';
+                currentEditingItem = null;
+            }
+            
+            // Save edited item
+            saveEditBtn.addEventListener('click', function() {
+                if (currentEditingItem) {
+                    currentEditingItem.querySelector('.item-name').textContent = editItemName.value;
+                    currentEditingItem.dataset.description = editItemDescription.value;
+                    
+                    const descElement = currentEditingItem.querySelector('.item-description');
+                    if (descElement) {
+                        descElement.textContent = editItemDescription.value;
+                    } else if (editItemDescription.value) {
+                        const newDescElement = document.createElement('div');
+                        newDescElement.className = 'item-description';
+                        newDescElement.textContent = editItemDescription.value;
+                        currentEditingItem.appendChild(newDescElement);
+                    }
+                    
+                    hideEditModal();
+                }
+            });
+            
+            cancelEditBtn.addEventListener('click', hideEditModal);
+            
+            // Close modal when clicking outside
+            editModal.addEventListener('click', function(e) {
+                if (e.target === editModal) {
+                    hideEditModal();
+                }
+            });
+            
+            // Character modal
+            addCharacterBtn.addEventListener('click', function() {
+                characterModal.style.display = 'flex';
+                document.getElementById('characterName').focus();
+            });
+            
+            // Items modal
+            addItemBtn.addEventListener('click', function() {
+                itemsModal.style.display = 'flex';
+                itemsTextarea.focus();
+            });
+            
+            // Close buttons
+            closeButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.closest('.modal').style.display = 'none';
+                });
+            });
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+            
+            // Save character
+            saveCharacterBtn.addEventListener('click', function() {
+                const name = document.getElementById('characterName').value;
+                const nickname = document.getElementById('characterNickname').value;
+                const imageUrl = document.getElementById('characterImage').value;
+                
+                if (name) {
+                    addCharacter(name, nickname, imageUrl);
+                    characterModal.style.display = 'none';
+                    
+                    // Clear fields
+                    document.getElementById('characterName').value = '';
+                    document.getElementById('characterNickname').value = '';
+                    document.getElementById('characterImage').value = '';
+                } else {
+                    alert('Пожалуйста, введите имя персонажа');
+                }
+            });
+            
+            // Save items
+            saveItemsBtn.addEventListener('click', function() {
+                const itemsText = itemsTextarea.value;
+                const lines = itemsText.split('\n').filter(line => line.trim());
+                
+                lines.forEach(line => {
+                    const parts = line.split('|').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        const name = parts[0];
+                        const value = parseFloat(parts[1]) || 0;
+                        const slot = parts[2];
+                        const description = parts[3] || '';
+                        
+                        addItemToContainer(
+                            name,
+                            1,
+                            value,
+                            slot,
+                            unassignedItemsContainer,
+                            false,
+                            description
+                        );
+                    }
+                });
+                
+                itemsModal.style.display = 'none';
+                itemsTextarea.value = '';
+                updateTotals();
+            });
+            
+            // Scroll to top button
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            // Add character function
+            function addCharacter(name, nickname = '', imageUrl = '') {
+                const characterId = 'character-' + Date.now();
+                const character = document.createElement('div');
+                character.className = 'character';
+                character.id = characterId;
+                
+                // Create background element if image URL provided
+                if (imageUrl) {
+                    const bg = document.createElement('div');
+                    bg.className = 'character-background';
+                    bg.style.backgroundImage = `url('${imageUrl}')`;
+                    character.appendChild(bg);
+                }
+                
+                // Create content container
+                const content = document.createElement('div');
+                content.className = 'character-content';
+                
+                // Generate slots HTML with icons
+                let slotsHTML = '';
+                slotConfig.forEach(slot => {
+                    const iconHTML = slot.icon ? `<img src="${slot.icon}" alt="${slot.name}" onerror="this.style.display='none'">` : '';
+                    slotsHTML += `
+                        <div class="slot-group">
+                            <div class="slot-label">${iconHTML}${slot.name}</div>
+                            <div class="slot" data-slot="${slot.key}" id="${characterId}-${slot.key}"></div>
+                        </div>
+                    `;
+                });
+                
+                content.innerHTML = `
+                    <div class="character-header">
+                        <div class="character-title-row">
+                            <div class="character-title">${name}</div>
+                            <div class="delete-character" data-character="${characterId}">✕</div>
+                        </div>
+                        <div class="character-nickname" contenteditable="true">${nickname}</div>
+                        <div class="character-total-header">Всего: <span id="${characterId}-total-header">0 зол.</span></div>
+                    </div>
+                    <div class="character-slots">
+                        ${slotsHTML}
+                    </div>
+                `;
+                
+                character.appendChild(content);
+                charactersContainer.appendChild(character);
+                
+                // Add delete character functionality
+                character.querySelector('.delete-character').addEventListener('click', function() {
+                    character.querySelectorAll('.item').forEach(item => {
+                        unassignedItemsContainer.appendChild(item);
+                    });
+                    character.remove();
+                    updateTotals();
+                });
+                
+                // Setup drag and drop for slots
+                character.querySelectorAll('.slot').forEach(slot => {
+                    setupDropTarget(slot);
+                });
+                
+                // Setup drop for entire character
+                setupCharacterDropTarget(character);
+                
+                return character;
+            }
+            
+            // Add item to container function
+            function addItemToContainer(name, qty, value, slot, container, isGold = false, description = '') {
+                const itemId = 'item-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.id = itemId;
+                item.draggable = true;
+                item.dataset.value = value;
+                item.dataset.isGold = isGold;
+                item.dataset.slot = slot;
+                item.dataset.description = description;
+                
+                // Проверяем, является ли контейнер слотом персонажа
+                const isCharacterSlot = container.classList.contains('slot');
+                
+                // Для предметов в инвентаре персонажа вообще не добавляем иконку
+                const iconHTML = !isCharacterSlot ? 
+                    `<img src="${slotIcons[slot] || slotIcons.Other}" class="item-icon" alt="${slot}" onerror="this.style.display='none'">` : 
+                    '';
+                
+                let descriptionHTML = '';
+                if (description) {
+                    descriptionHTML = `<div class="item-description">${description}</div>`;
+                }
+                
+                item.innerHTML = `
+                    <div class="item-content">
+                        ${iconHTML}
+                        <div class="item-text">
+                            <div class="item-name">${name}</div>
+                            <div class="item-details">
+                                <span>${value} зол.</span>
+                                ${isGold ? '<span>💰</span>' : ''}
+                            </div>
+                            ${descriptionHTML}
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <div class="edit-item" data-item="${itemId}">✎</div>
+                        <div class="delete-item" data-item="${itemId}">✕</div>
+                    </div>
+                `;
+                
+                container.appendChild(item);
+                
+                // Если это слот персонажа, показываем группу слотов
+                if (isCharacterSlot) {
+                    const slotGroup = container.closest('.slot-group');
+                    if (slotGroup) {
+                        slotGroup.classList.add('has-items');
+                    }
+                }
+                
+                // Add delete item functionality
+                item.querySelector('.delete-item').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    item.remove();
+                    updateTotals();
+                });
+                
+                // Add edit item functionality
+                item.querySelector('.edit-item').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showEditModal(item);
+                });
+                
+                // Setup drag and drop
+                setupDraggableItem(item);
+                
+                return item;
+            }
+            
+            // Setup draggable item
+            function setupDraggableItem(item) {
+                item.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', item.id);
+                    setTimeout(() => {
+                        item.classList.add('item-dragging');
+                    }, 0);
+                });
+                
+                item.addEventListener('dragend', function() {
+                    this.classList.remove('item-dragging');
+                    document.querySelectorAll('.slot-highlight').forEach(el => {
+                        el.classList.remove('slot-highlight');
+                    });
+                });
+            }
+            
+            // Setup drop target
+            function setupDropTarget(slot) {
+                slot.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('slot-highlight');
+                });
+                
+                slot.addEventListener('dragleave', function() {
+                    this.classList.remove('slot-highlight');
+                });
+                
+                slot.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('slot-highlight');
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = document.getElementById(itemId);
+                    
+                    if (item) {
+                        const targetSlot = this.dataset.slot;
+                        const itemSlot = item.dataset.slot;
+                        
+                        if (targetSlot === itemSlot || targetSlot === 'Other') {
+                            item.remove();
+                            this.appendChild(item);
+                            updateTotals();
+                        }
+                    }
+                });
+            }
+            
+            // Auto-place items when dropped on character (not specific slot)
+            function setupCharacterDropTarget(character) {
+                character.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                });
+                
+                character.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const item = document.getElementById(itemId);
+                    
+                    if (item) {
+                        const slotType = item.dataset.slot;
+                        const slot = character.querySelector(`.slot[data-slot="${slotType}"]`) || 
+                                     character.querySelector('.slot[data-slot="Other"]');
+                        
+                        if (slot) {
+                            item.remove();
+                            slot.appendChild(item);
+                            updateTotals();
+                        }
+                    }
+                });
+            }
+            
+            // Setup drop for unassigned items
+            setupDropTarget(unassignedItemsContainer);
+            
+            // Allow dropping items back to unassigned from characters
+            unassignedItemsContainer.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('slot-highlight');
+            });
+            
+            unassignedItemsContainer.addEventListener('dragleave', function() {
+                this.classList.remove('slot-highlight');
+            });
+            
+            unassignedItemsContainer.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('slot-highlight');
+                const itemId = e.dataTransfer.getData('text/plain');
+                const item = document.getElementById(itemId);
+                
+                if (item) {
+                    item.remove();
+                    this.appendChild(item);
+                    updateTotals();
+                }
+            });
+            
+            // Update all totals
+            function updateTotals() {
+                // Сначала скрываем все группы слотов
+                document.querySelectorAll('.slot-group').forEach(group => {
+                    group.classList.remove('has-items');
+                });
+                
+                // Затем показываем только те, где есть предметы
+                document.querySelectorAll('.slot .item').forEach(item => {
+                    const slotGroup = item.closest('.slot-group');
+                    if (slotGroup) {
+                        slotGroup.classList.add('has-items');
+                    }
+                });
+                
+                // Update each character's total
+                document.querySelectorAll('.character').forEach(character => {
+                    let totalValue = 0;
+                    
+                    character.querySelectorAll('.slot .item').forEach(item => {
+                        totalValue += parseFloat(item.dataset.value) || 0;
+                    });
+                    
+                    const totalElement = character.querySelector('.character-total-header span');
+                    if (totalElement) {
+                        totalElement.textContent = `${totalValue.toFixed(2)} зол.`;
+                    }
+                });
+                
+                // Update unassigned total
+                let unassignedValue = 0;
+                document.querySelectorAll('#unassignedItems .item').forEach(item => {
+                    unassignedValue += parseFloat(item.dataset.value) || 0;
+                });
+                document.getElementById('unassignedTotal').textContent = `${unassignedValue.toFixed(2)} зол.`;
+                
+                // Update global totals
+                let globalGold = 0;
+                let globalItems = 0;
+                
+                document.querySelectorAll('.item').forEach(item => {
+                    globalGold += parseFloat(item.dataset.value) || 0;
+                    globalItems++;
+                });
+                
+                document.getElementById('globalGoldTotal').textContent = `${globalGold.toFixed(2)} зол.`;
+                document.getElementById('globalItemsTotal').textContent = globalItems;
+            }
+        });
+    </script>
+</body>
+</html>
