@@ -12,36 +12,6 @@
     --character-width: 490px;
     --character-font-size: 1.5rem;
 }
-
-.character-gold-wallet {
-    margin: 8px 0;
-    padding: 5px;
-    background: rgba(255, 215, 0, 0.1);
-    border-radius: 4px;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.wallet-input {
-    width: 80px;
-    background: #1a1a1a;
-    border: 1px solid #444;
-    color: #ffd700;
-    border-radius: 3px;
-    padding: 2px 5px;
-    text-align: right;
-}
-
-.character-total-header {
-    font-weight: bold;
-    color: #fff;
-    border-top: 1px solid #444;
-    padding-top: 5px;
-    margin-top: 5px;
-}
-
 /* Стили для полос прокрутки */
 ::-webkit-scrollbar {
     width: 10px;
