@@ -8,10 +8,14 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Подключаем Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Инициализация Firebase -->
     <script src="firebase.js"></script>
     
+    <!-- Основная структура приложения -->
     <div class="main-container">
         <button class="refresh-btn" id="refreshData">↻</button>
         
@@ -25,29 +29,37 @@
                     <div class="character-total">Всего: <span id="unassignedTotal">0 зол.</span></div>
                     
                     <div class="buttons-row">
-                        <button class="add-btn" id="addCharacterBtn">Добавить персонажа</button>
-                        <button class="add-btn" id="addItemBtn">Добавить предметы</button>
+                        <button class="add-button" id="addCharacterBtn">+ Персонаж</button>
+                        <button class="add-button" id="addItemBtn">+ Предмет</button>
                     </div>
                 </div>
-                <div class="characters-scroll-container">
-                    <div class="characters-container" id="charactersContainer"></div>
+                
+                <div class="characters-container" id="charactersContainer">
+                    <!-- Персонажи будут добавляться динамически -->
                 </div>
+            </div>
+        </div>
+        
+        <div class="total-section">
+            <div class="total-box">
+                <div>Всего золота</div>
+                <div class="total-value" id="globalGoldTotal">0 зол.</div>
+            </div>
+            <div class="total-box">
+                <div>Всего предметов</div>
+                <div class="total-value" id="globalItemsTotal">0</div>
             </div>
         </div>
     </div>
 
-    <div class="stats-bar">
-        <div class="stat-item">Золота всего: <span id="globalGoldTotal">0 зол.</span></div>
-        <div class="stat-item">Предметов: <span id="globalItemsTotal">0</span></div>
-    </div>
-
+    <!-- Модальные окна -->
     <div class="modal" id="characterModal">
         <div class="modal-content">
             <span class="close">&times;</span>
             <div class="modal-title">Добавить персонажа</div>
             <input type="text" id="characterName" placeholder="Имя персонажа" class="modal-input" required>
-            <input type="text" id="characterNickname" placeholder="Прозвище" class="modal-input">
-            <input type="text" id="characterImage" placeholder="URL изображения" class="modal-input">
+            <input type="text" id="characterNickname" placeholder="Прозвище (опционально)" class="modal-input">
+            <input type="text" id="characterImage" placeholder="URL изображения (опционально)" class="modal-input">
             <div class="modal-buttons">
                 <button class="modal-button" id="saveCharacter">Сохранить</button>
             </div>
@@ -58,16 +70,18 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <div class="modal-title">Добавить предметы</div>
-            <p>Формат: Название | Цена | Слот</p>
-            <textarea id="itemsTextarea" class="modal-textarea" placeholder="Меч | 100 | Weapon"></textarea>
+            <p>Формат: Название | Цена (gp) | Слот | Описание (опционально)</p>
+            <p>Пример: <em>Меч света | 1500 | Weapon | Светится в темноте</em></p>
+            <textarea id="itemsTextarea" class="modal-textarea" placeholder="Введите предметы, каждый с новой строки"></textarea>
             <div class="modal-buttons">
-                <button class="modal-button" id="saveItems">Добавить</button>
+                <button class="modal-button" id="saveItems">Добавить предметы</button>
             </div>
         </div>
     </div>
 
     <div class="scroll-indicator" id="scrollToTop">↑</div>
 
+    <!-- Основная логика приложения -->
     <script src="app.js"></script>
 </body>
 </html>
